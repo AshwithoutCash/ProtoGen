@@ -21,8 +21,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include API routes
+# Include API routes with both prefixes for compatibility
 app.include_router(router, prefix="/api/v1", tags=["protocols"])
+app.include_router(router, prefix="/api", tags=["protocols"])
 
 
 @app.get("/")
@@ -33,6 +34,18 @@ async def root():
         "version": settings.app_version,
         "docs": "/docs"
     }
+
+
+@app.get("/api/test")
+async def api_test():
+    """Test endpoint for API routing."""
+    return {"message": "API routing works!", "path": "/api/test"}
+
+
+@app.get("/api/v1/test")
+async def api_v1_test():
+    """Test endpoint for API v1 routing."""
+    return {"message": "API v1 routing works!", "path": "/api/v1/test"}
 
 
 if __name__ == "__main__":
