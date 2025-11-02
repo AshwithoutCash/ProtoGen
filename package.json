@@ -1,0 +1,29 @@
+{
+  "name": "proto-gen",
+  "version": "1.0.0",
+  "description": "AI-Powered Laboratory Protocol Assistant",
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build",
+    "dev": "concurrently \"cd backend && python main.py\" \"cd frontend && npm run dev\"",
+    "install-frontend": "cd frontend && npm install",
+    "install-backend": "cd backend && pip install -r requirements.txt"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AshwithoutCash/ProtoGen.git"
+  },
+  "keywords": [
+    "laboratory",
+    "protocols",
+    "ai",
+    "molecular-biology",
+    "pcr",
+    "research"
+  ],
+  "author": "AshwithoutCash",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "python": ">=3.8.0"
+  }
+}

@@ -1,0 +1,164 @@
+Proto-Gen Directory Structure
+=============================
+
+ProtoGen/
+│
+├── 📄 README.md                          # Main project documentation
+├── 📄 QUICK_START.md                     # 5-minute setup guide
+├── 📄 SETUP_GUIDE.md                     # Detailed setup instructions
+├── 📄 ARCHITECTURE.md                    # System architecture documentation
+├── 📄 API_DOCUMENTATION.md               # Complete API reference
+├── 📄 EXAMPLES.md                        # Usage examples
+├── 📄 CHANGELOG.md                       # Version history
+├── 📄 PROJECT_SUMMARY.md                 # Project overview
+├── 📄 LICENSE                            # MIT License with disclaimer
+├── 📄 .gitignore                         # Git ignore rules
+├── 🚀 start-backend.bat                  # Quick start script for backend
+├── 🚀 start-frontend.bat                 # Quick start script for frontend
+│
+├── 📁 backend/                           # Backend application (Python/FastAPI)
+│   ├── 📄 main.py                        # Application entry point
+│   ├── 📄 requirements.txt               # Python dependencies
+│   ├── 📄 .env.example                   # Environment variables template
+│   ├── 📄 .env                           # Environment variables (create this!)
+│   │
+│   └── 📁 app/                           # Application package
+│       ├── 📄 __init__.py
+│       │
+│       ├── 📁 api/                       # API layer
+│       │   ├── 📄 __init__.py
+│       │   └── 📄 routes.py              # API endpoint definitions
+│       │
+│       ├── 📁 core/                      # Core configuration
+│       │   ├── 📄 __init__.py
+│       │   └── 📄 config.py              # Settings and configuration
+│       │
+│       ├── 📁 models/                    # Data models
+│       │   ├── 📄 __init__.py
+│       │   └── 📄 protocol.py            # Pydantic models for requests/responses
+│       │
+│       ├── 📁 prompts/                   # Prompt templates
+│       │   ├── 📄 __init__.py
+│       │   ├── 📄 protocol_generation.py # Protocol generation prompts
+│       │   └── 📄 troubleshooting.py     # Troubleshooting prompts
+│       │
+│       └── 📁 services/                  # Business logic
+│           ├── 📄 __init__.py
+│           ├── 📄 llm_service.py         # LLM provider abstraction
+│           └── 📄 protocol_service.py    # Protocol operations
+│
+└── 📁 frontend/                          # Frontend application (React/Vite)
+    ├── 📄 package.json                   # Node.js dependencies
+    ├── 📄 vite.config.js                 # Vite configuration
+    ├── 📄 tailwind.config.js             # TailwindCSS configuration
+    ├── 📄 postcss.config.js              # PostCSS configuration
+    ├── 📄 .eslintrc.cjs                  # ESLint configuration
+    ├── 📄 index.html                     # HTML entry point
+    │
+    └── 📁 src/                           # Source code
+        ├── 📄 main.jsx                   # React entry point
+        ├── 📄 App.jsx                    # Main App component
+        ├── 📄 index.css                  # Global styles
+        │
+        ├── 📁 components/                # Reusable components
+        │   ├── 📄 Layout.jsx             # Main layout with header/footer
+        │   └── 📄 ProtocolDisplay.jsx    # Protocol display component
+        │
+        ├── 📁 pages/                     # Page components
+        │   ├── 📄 Home.jsx               # Landing page
+        │   ├── 📄 GenerateProtocol.jsx   # Protocol generation page
+        │   └── 📄 TroubleshootProtocol.jsx # Troubleshooting page
+        │
+        ├── 📁 services/                  # API services
+        │   └── 📄 api.js                 # API client
+        │
+        └── 📁 utils/                     # Utility functions
+            └── 📄 cn.js                  # Class name utility
+
+
+Key Files Explained
+===================
+
+Backend Files:
+--------------
+main.py                    - FastAPI application setup, CORS, routes
+requirements.txt           - Python package dependencies
+.env                       - API keys and configuration (YOU CREATE THIS)
+
+app/api/routes.py          - API endpoints (/generate, /troubleshoot, etc.)
+app/core/config.py         - Configuration management with Pydantic
+app/models/protocol.py     - Request/response models, enums
+app/prompts/*.py           - Prompt templates for LLM
+app/services/llm_service.py - LLM provider integration (OpenAI, Anthropic)
+app/services/protocol_service.py - Business logic for protocols
+
+Frontend Files:
+---------------
+package.json               - Node.js dependencies and scripts
+vite.config.js             - Vite build configuration
+tailwind.config.js         - TailwindCSS theme configuration
+index.html                 - HTML template
+
+src/main.jsx               - React app initialization
+src/App.jsx                - Main app with routing
+src/index.css              - Global styles and TailwindCSS
+
+src/components/Layout.jsx  - Header, navigation, footer
+src/components/ProtocolDisplay.jsx - Markdown rendering, copy/download
+
+src/pages/Home.jsx         - Landing page with features
+src/pages/GenerateProtocol.jsx - Protocol generation form
+src/pages/TroubleshootProtocol.jsx - Troubleshooting form
+
+src/services/api.js        - Axios-based API client
+src/utils/cn.js            - TailwindCSS class merging utility
+
+Documentation Files:
+--------------------
+README.md                  - Main documentation, overview
+QUICK_START.md             - Fast setup guide (5 minutes)
+SETUP_GUIDE.md             - Detailed setup with troubleshooting
+ARCHITECTURE.md            - System design, architecture diagrams
+API_DOCUMENTATION.md       - Complete API reference with examples
+EXAMPLES.md                - Usage examples, best practices
+CHANGELOG.md               - Version history
+PROJECT_SUMMARY.md         - High-level project overview
+LICENSE                    - MIT License with safety disclaimer
+
+
+File Count Summary
+==================
+Backend Python Files:      15
+Frontend JavaScript Files: 15
+Documentation Files:       10
+Configuration Files:       8
+Total Files:              48+
+
+
+Important Notes
+===============
+1. Create backend/.env from backend/.env.example
+2. Add your API keys to backend/.env
+3. Run backend and frontend in separate terminals
+4. Backend runs on port 8000
+5. Frontend runs on port 5173
+6. API docs available at http://localhost:8000/docs
+
+
+Quick Commands
+==============
+Backend:
+  cd backend
+  python -m venv venv
+  venv\Scripts\activate
+  pip install -r requirements.txt
+  python main.py
+
+Frontend:
+  cd frontend
+  npm install
+  npm run dev
+
+Or use the batch scripts:
+  start-backend.bat
+  start-frontend.bat
