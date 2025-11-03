@@ -19,6 +19,7 @@ class ProtocolResponse(BaseModel):
     provider_used: str
     error: Optional[str] = None
 
+# The function file is mounted at /api/v1/generate by Vercel; FastAPI route should be '/'
 @app.post("/")
 async def generate(request: ProtocolGenerationRequest) -> ProtocolResponse:
     protocol_text = f"""# Protocol: {request.technique}
