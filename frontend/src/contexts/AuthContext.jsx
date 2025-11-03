@@ -142,20 +142,38 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
+    let timeoutId;
+    
     try {
-      const unsubscribe = onAuthStateChanged(auth, async (user) => {
-        setCurrentUser(user);
-        if (user) {
-          await loadUserProfile(user.uid);
-        } else {
-          setUserProfile(null);
-        }
+      // Set a timeout to prevent infinite loading
+      timeoutId = setTimeout(() => {
+        console.warn('AuthContext: Auth initialization timeout, proceeding without auth');
         setLoading(false);
+      }, 10000); // 10 second timeout
+
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        try {
+          clearTimeout(timeoutId); // Clear timeout since auth resolved
+          setCurrentUser(user);
+          if (user) {
+            await loadUserProfile(user.uid);
+          } else {
+            setUserProfile(null);
+          }
+          setLoading(false);
+        } catch (error) {
+          console.error('AuthContext: Error in auth state change:', error);
+          setLoading(false);
+        }
       });
 
-      return unsubscribe;
+      return () => {
+        clearTimeout(timeoutId);
+        unsubscribe();
+      };
     } catch (error) {
       console.error('AuthContext: Error setting up auth listener:', error);
+      clearTimeout(timeoutId);
       setLoading(false);
     }
   }, []);
@@ -173,7 +191,17 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {loading ? (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+            <h2 className="text-xl font-semibold text-gray-700 mb-2">Initializing ProtoGen</h2>
+            <p className="text-gray-500">Setting up your laboratory management system...</p>
+          </div>
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 }
