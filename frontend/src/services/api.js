@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Use relative URL to leverage Vite proxy
-const API_BASE_URL = '/api/v1';
+// Use direct backend URL for testing
+const API_BASE_URL = 'http://localhost:8001/api/v1';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -149,12 +149,19 @@ export const protocolAPI = {
 
   getInventory: async () => {
     try {
+      // Add timeout to prevent infinite loading
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
       const response = await fetch(`${API_BASE_URL}/inventory`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -164,19 +171,29 @@ export const protocolAPI = {
       return result;
     } catch (error) {
       console.error('Get inventory error:', error);
+      if (error.name === 'AbortError') {
+        return { success: false, error: 'Request timeout - backend not responding' };
+      }
       return { success: false, error: error.message };
     }
   },
 
   searchInventory: async (searchTerm) => {
     try {
+      // Add timeout to prevent infinite loading
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
       const response = await fetch(`${API_BASE_URL}/inventory/search`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ search_term: searchTerm }),
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -186,6 +203,9 @@ export const protocolAPI = {
       return result;
     } catch (error) {
       console.error('Search inventory error:', error);
+      if (error.name === 'AbortError') {
+        return { success: false, error: 'Search timeout - backend not responding' };
+      }
       return { success: false, error: error.message };
     }
   },

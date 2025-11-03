@@ -7,6 +7,7 @@ import DNALoader from '../components/DNALoader';
 
 const SavedResults = () => {
   const { currentUser } = useAuth();
+  
   const [savedResults, setSavedResults] = useState([]);
   const [bookmarks, setBookmarks] = useState([]);
   const [loading, setLoading] = useState(true);

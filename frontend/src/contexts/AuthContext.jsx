@@ -142,24 +142,35 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
+    console.log('AuthContext: Starting initialization...');
     let timeoutId;
     
     try {
-      // Set a timeout to prevent infinite loading
+      // Set a very short timeout to prevent loading screens
       timeoutId = setTimeout(() => {
-        console.warn('AuthContext: Auth initialization timeout, proceeding without auth');
+        console.warn('AuthContext: Auth initialization timeout (2s), proceeding without auth');
+        setCurrentUser(null);
+        setUserProfile(null);
         setLoading(false);
-      }, 10000); // 10 second timeout
+      }, 2000); // Reduced to 2 seconds
 
+      console.log('AuthContext: Setting up Firebase auth listener...');
+      
       const unsubscribe = onAuthStateChanged(auth, async (user) => {
         try {
+          console.log('AuthContext: Auth state changed, user:', user ? 'logged in' : 'not logged in');
           clearTimeout(timeoutId); // Clear timeout since auth resolved
           setCurrentUser(user);
+          
           if (user) {
+            console.log('AuthContext: Loading user profile...');
             await loadUserProfile(user.uid);
           } else {
+            console.log('AuthContext: No user, setting profile to null');
             setUserProfile(null);
           }
+          
+          console.log('AuthContext: Initialization complete, setting loading to false');
           setLoading(false);
         } catch (error) {
           console.error('AuthContext: Error in auth state change:', error);
@@ -168,12 +179,15 @@ export function AuthProvider({ children }) {
       });
 
       return () => {
+        console.log('AuthContext: Cleaning up...');
         clearTimeout(timeoutId);
         unsubscribe();
       };
     } catch (error) {
       console.error('AuthContext: Error setting up auth listener:', error);
-      clearTimeout(timeoutId);
+      if (timeoutId) clearTimeout(timeoutId);
+      setCurrentUser(null);
+      setUserProfile(null);
       setLoading(false);
     }
   }, []);

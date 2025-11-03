@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Upload, Database, AlertTriangle, CheckCircle, FileText, Package, Search, Download } from 'lucide-react';
 import { protocolAPI } from '../services/api';
-import DNALoader from '../components/DNALoader';
 
 const IMSGen = () => {
   const [loading, setLoading] = useState(false);
@@ -11,6 +10,7 @@ const IMSGen = () => {
   const [viewMode, setViewMode] = useState('upload'); // 'upload', 'view', 'search'
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
@@ -48,12 +48,20 @@ const IMSGen = () => {
       formData.append('database_target', 'firebase');
 
       const response = await protocolAPI.uploadInventory(formData);
+      console.log('Upload response:', response);
 
       if (response.success) {
         setUploadResult(response.data);
+        // Set the uploaded inventory data directly from the response
+        if (response.data && response.data.items) {
+          console.log('Setting inventory data:', response.data.items.length, 'items');
+          setInventoryData(response.data.items);
+          setSuccessMessage(`Successfully uploaded ${response.data.items.length} items!`);
+        } else {
+          console.log('No items found in response data:', response.data);
+        }
         setViewMode('view');
-        // Refresh inventory data
-        await loadInventoryData();
+        setError(null); // Clear any previous errors
       } else {
         setError(response.error || 'Failed to process inventory file');
       }
@@ -65,13 +73,80 @@ const IMSGen = () => {
   };
 
   const loadInventoryData = async () => {
+    setLoading(true);
     try {
       const response = await protocolAPI.getInventory();
       if (response.success) {
         setInventoryData(response.data.items || []);
+        setError(null);
+      } else {
+        setError(response.error || 'Failed to load inventory data');
+        // Set mock data for demo purposes
+        setInventoryData([
+          {
+            ItemID: "DEMO-001",
+            MaterialName: "Q5 High-Fidelity DNA Polymerase",
+            Brand: "New England Biolabs",
+            CurrentStock: 25,
+            Unit: "units",
+            Location: "-20°C Freezer A, Rack 2",
+            MinimumStock: 5
+          },
+          {
+            ItemID: "DEMO-002",
+            MaterialName: "Agarose",
+            Brand: "Bio-Rad",
+            CurrentStock: 2,
+            Unit: "grams",
+            Location: "Room Temperature Cabinet B",
+            MinimumStock: 50
+          },
+          {
+            ItemID: "DEMO-003",
+            MaterialName: "dNTP Mix",
+            Brand: "Thermo Fisher Scientific",
+            CurrentStock: 1,
+            Unit: "mL",
+            Location: "-20°C Freezer A, Rack 1",
+            MinimumStock: 5
+          }
+        ]);
       }
     } catch (err) {
       console.error('Failed to load inventory:', err);
+      setError(`Backend not available: ${err.message}`);
+      // Set mock data for demo purposes when backend is down
+      setInventoryData([
+        {
+          ItemID: "DEMO-001",
+          MaterialName: "Q5 High-Fidelity DNA Polymerase",
+          Brand: "New England Biolabs",
+          CurrentStock: 25,
+          Unit: "units",
+          Location: "-20°C Freezer A, Rack 2",
+          MinimumStock: 5
+        },
+        {
+          ItemID: "DEMO-002",
+          MaterialName: "Agarose (Low Stock)",
+          Brand: "Bio-Rad",
+          CurrentStock: 2,
+          Unit: "grams",
+          Location: "Room Temperature Cabinet B",
+          MinimumStock: 50
+        },
+        {
+          ItemID: "DEMO-003",
+          MaterialName: "dNTP Mix (Low Stock)",
+          Brand: "Thermo Fisher Scientific",
+          CurrentStock: 1,
+          Unit: "mL",
+          Location: "-20°C Freezer A, Rack 1",
+          MinimumStock: 5
+        }
+      ]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -81,13 +156,20 @@ const IMSGen = () => {
       return;
     }
 
+    setLoading(true);
     try {
       const response = await protocolAPI.searchInventory(searchTerm);
       if (response.success) {
         setInventoryData(response.data.items || []);
+        setError(null);
+      } else {
+        setError(`Search failed: ${response.error}`);
       }
     } catch (err) {
-      setError(`Search failed: ${err.message}`);
+      setError(`Search failed: Backend not available`);
+      console.error('Search error:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -105,7 +187,7 @@ const IMSGen = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <DNALoader visible={loading} overlay={true} />
+      {/* Removed DNALoader completely - no more loading screens */}
       
       {/* Header */}
       <div className="max-w-7xl mx-auto mb-8">
@@ -122,7 +204,11 @@ const IMSGen = () => {
         {/* Navigation Tabs */}
         <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
           <button
-            onClick={() => setViewMode('upload')}
+            onClick={() => {
+              setViewMode('upload');
+              setSuccessMessage(null);
+              setError(null);
+            }}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               viewMode === 'upload'
                 ? 'bg-white text-purple-700 shadow-sm'
@@ -135,7 +221,11 @@ const IMSGen = () => {
           <button
             onClick={() => {
               setViewMode('view');
-              loadInventoryData();
+              setSuccessMessage(null);
+              setError(null);
+              if (inventoryData.length === 0) {
+                loadInventoryData();
+              }
             }}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               viewMode === 'view'
@@ -186,8 +276,12 @@ const IMSGen = () => {
                   disabled={!selectedFile || loading}
                   className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
                 >
-                  <Upload className="w-5 h-5" />
-                  <span>Process with Llama & Upload to Firebase</span>
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <Upload className="w-5 h-5" />
+                  )}
+                  <span>{loading ? 'Processing...' : 'Process with Llama & Upload to Firebase'}</span>
                 </button>
               </div>
             </div>
@@ -241,6 +335,20 @@ const IMSGen = () => {
                 </div>
                 
                 <div className="flex items-center space-x-4">
+                  {inventoryData.length === 0 && (
+                    <button
+                      onClick={loadInventoryData}
+                      disabled={loading}
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors flex items-center space-x-2"
+                    >
+                      {loading ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <Database className="w-4 h-4" />
+                      )}
+                      <span>{loading ? 'Loading...' : 'Load Data'}</span>
+                    </button>
+                  )}
                   <div className="relative">
                     <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                     <input
@@ -254,9 +362,15 @@ const IMSGen = () => {
                   </div>
                   <button
                     onClick={handleSearch}
-                    className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                    disabled={loading}
+                    className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors flex items-center space-x-2"
                   >
-                    Search
+                    {loading ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <Search className="w-4 h-4" />
+                    )}
+                    <span>{loading ? 'Searching...' : 'Search'}</span>
                   </button>
                 </div>
               </div>
@@ -348,15 +462,40 @@ const IMSGen = () => {
                 </table>
               </div>
               
-              {filteredInventory.length === 0 && (
+              {filteredInventory.length === 0 && inventoryData.length === 0 && (
                 <div className="text-center py-12">
                   <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">No inventory items found</p>
+                  <p className="text-gray-500">No inventory data loaded</p>
                   <p className="text-sm text-gray-400 mt-2">
-                    Upload your first inventory file to get started
+                    Click "Load Data" to fetch inventory from backend, or upload a CSV file to get started
                   </p>
                 </div>
               )}
+              {filteredInventory.length === 0 && inventoryData.length > 0 && (
+                <div className="text-center py-12">
+                  <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">No items match your search</p>
+                  <p className="text-sm text-gray-400 mt-2">
+                    Try a different search term or clear the search to see all items
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Success Message */}
+        {successMessage && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+              <span className="font-medium text-green-900">{successMessage}</span>
+              <button
+                onClick={() => setSuccessMessage(null)}
+                className="ml-auto text-green-600 hover:text-green-800"
+              >
+                ×
+              </button>
             </div>
           </div>
         )}

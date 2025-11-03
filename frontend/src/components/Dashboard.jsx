@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 
 const Dashboard = () => {
   const { currentUser, userProfile } = useAuth();
+  
   const [userStats, setUserStats] = useState(null);
   const [loading, setLoading] = useState(true);
 

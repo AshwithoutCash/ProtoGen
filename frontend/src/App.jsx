@@ -15,6 +15,7 @@ import ProcureGen from './pages/ProcureGen';
 import IMSGen from './pages/IMSGen';
 import SavedResults from './pages/SavedResults';
 import TestPage from './components/TestPage';
+import TestInventory from './pages/TestInventory';
 
 function App() {
   return (
@@ -26,80 +27,81 @@ function App() {
             v7_relativeSplatPath: true
           }}
         >
-        <Routes>
-          {/* Test Route */}
-          <Route path="/test" element={<TestPage />} />
-          
-          {/* Public Routes */}
-          <Route path="/signin" element={<SignIn />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          
-          {/* Protected Routes */}
-          <Route path="/" element={
-            <ProtectedRoute>
-              <Layout>
-                <Home />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Layout>
-                <Home />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/generate" element={
-            <ProtectedRoute>
-              <Layout>
-                <GenerateProtocol />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/troubleshoot" element={
-            <ProtectedRoute>
-              <Layout>
-                <TroubleshootProtocol />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/routes" element={
-            <ProtectedRoute>
-              <Layout>
-                <RouteGen />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/tools" element={
-            <ProtectedRoute>
-              <Layout>
-                <ToolGen />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/procure" element={
-            <ProtectedRoute>
-              <Layout>
-                <ProcureGen />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/inventory" element={
-            <ProtectedRoute>
-              <Layout>
-                <IMSGen />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/saved" element={
-            <ProtectedRoute>
-              <Layout>
-                <SavedResults />
-              </Layout>
-            </ProtectedRoute>
-          } />
-        </Routes>
+          <Routes>
+            {/* Test Routes */}
+            <Route path="/test" element={<TestPage />} />
+            <Route path="/test-inventory" element={<TestInventory />} />
+            
+            {/* Public Routes */}
+            <Route path="/signin" element={<SignIn />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            
+            {/* Protected Routes */}
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Home />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Home />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/generate" element={
+              <ProtectedRoute>
+                <Layout>
+                  <GenerateProtocol />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/troubleshoot" element={
+              <ProtectedRoute>
+                <Layout>
+                  <TroubleshootProtocol />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/routes" element={
+              <ProtectedRoute>
+                <Layout>
+                  <RouteGen />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/tools" element={
+              <ProtectedRoute>
+                <Layout>
+                  <ToolGen />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/procure" element={
+              <ProtectedRoute>
+                <Layout>
+                  <ProcureGen />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/inventory" element={
+              <ProtectedRoute>
+                <Layout>
+                  <IMSGen />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/saved" element={
+              <ProtectedRoute>
+                <Layout>
+                  <SavedResults />
+                </Layout>
+              </ProtectedRoute>
+            } />
+          </Routes>
         </Router>
       </AuthProvider>
     </ErrorBoundary>

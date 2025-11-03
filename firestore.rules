@@ -26,6 +26,11 @@ service cloud.firestore {
       allow read, write, delete: if request.auth != null && request.auth.uid == userId;
     }
     
+    // Inventory collection - allow authenticated users to read and write
+    match /inventory/{itemId} {
+      allow read, write, delete: if request.auth != null;
+    }
+    
     // Allow authenticated users to read public data (templates, examples)
     match /public/{document=**} {
       allow read: if request.auth != null;

@@ -53,7 +53,7 @@ class ErrorBoundary extends React.Component {
               </button>
             </div>
 
-            {process.env.NODE_ENV === 'development' && (
+            {process.env.NODE_ENV === 'development' && this.state.errorInfo && (
               <details className="mt-6 text-left">
                 <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700">
                   Show Error Details
@@ -62,7 +62,7 @@ class ErrorBoundary extends React.Component {
                   <div className="font-semibold mb-2">Error:</div>
                   <div className="mb-2">{this.state.error && this.state.error.toString()}</div>
                   <div className="font-semibold mb-2">Component Stack:</div>
-                  <div>{this.state.errorInfo.componentStack}</div>
+                  <div>{this.state.errorInfo && this.state.errorInfo.componentStack}</div>
                 </div>
               </details>
             )}

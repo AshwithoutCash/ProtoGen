@@ -12,6 +12,7 @@ const SaveButton = ({
   className = '' 
 }) => {
   const { currentUser } = useAuth();
+  
   const [isSaved, setIsSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [contentHash, setContentHash] = useState('');

@@ -1,0 +1,21 @@
+ItemID,MaterialName,Brand,CurrentStock,Unit,Location,MinimumStock,Category,ExpiryDate,CostPerUnit,Supplier,Notes
+LAB-001,Q5 High-Fidelity DNA Polymerase,New England Biolabs,25,units,-20°C Freezer A Rack 2,5,Enzymes,2025-06-15,45.50,NEB Inc,High-fidelity enzyme for PCR
+LAB-002,Agarose Powder,Bio-Rad,150,grams,Room Temp Cabinet B,50,Electrophoresis,2026-12-31,0.85,Bio-Rad Labs,Molecular biology grade
+LAB-003,dNTP Mix (10mM each),Thermo Fisher Scientific,8,mL,-20°C Freezer A Rack 1,5,PCR Reagents,2025-03-20,28.75,Thermo Fisher,Ready-to-use mix
+LAB-004,Taq DNA Polymerase,Promega,12,units,-20°C Freezer B Rack 3,10,Enzymes,2025-08-10,22.30,Promega Corp,Standard Taq for routine PCR
+LAB-005,1kb DNA Ladder,Invitrogen,3,vials,-20°C Freezer A Rack 4,2,Markers,2025-11-30,35.60,Invitrogen,Molecular weight marker
+LAB-006,Ethidium Bromide Solution,Sigma-Aldrich,45,mL,Chemical Hood Cabinet,20,Stains,2025-09-15,18.90,Sigma-Aldrich,10mg/mL solution - TOXIC
+LAB-007,LB Agar Powder,Difco,500,grams,Room Temp Cabinet A,100,Media,2027-01-15,1.25,BD Biosciences,For bacterial culture plates
+LAB-008,Ampicillin Sodium Salt,Roche,2,grams,4°C Refrigerator Shelf 2,5,Antibiotics,2025-04-30,125.00,Roche Diagnostics,Stock antibiotic
+LAB-009,IPTG (Isopropyl β-D-1-thiogalactopyranoside),Goldbio,1,grams,-20°C Freezer B Rack 1,2,Inducers,2026-07-20,89.50,GoldBio Inc,Protein expression inducer
+LAB-010,Glycerol (Molecular Biology Grade),Fisher Scientific,250,mL,Room Temp Cabinet C,100,Solvents,2028-02-28,12.75,Fisher Scientific,For bacterial stocks
+LAB-011,Bovine Serum Albumin (BSA),Sigma-Aldrich,5,grams,4°C Refrigerator Shelf 1,2,Proteins,2025-12-10,78.40,Sigma-Aldrich,Blocking agent
+LAB-012,Tris Base,Invitrogen,100,grams,Room Temp Cabinet A,50,Buffers,2027-05-31,15.60,Invitrogen,pH buffer component
+LAB-013,EDTA Disodium Salt,Merck,75,grams,Room Temp Cabinet A,25,Chelators,2026-10-15,8.90,Merck KGaA,Metal chelating agent
+LAB-014,Sodium Chloride (NaCl),Fisher Scientific,1000,grams,Room Temp Cabinet D,200,Salts,2029-03-01,2.15,Fisher Scientific,Molecular biology grade
+LAB-015,Phenol:Chloroform:Isoamyl Alcohol,Ambion,50,mL,Chemical Hood Cabinet,20,Extraction,2025-07-25,45.80,Ambion Inc,DNA/RNA extraction - TOXIC
+LAB-016,Chloramphenicol,Sigma-Aldrich,1,grams,4°C Refrigerator Shelf 3,2,Antibiotics,2025-05-18,95.20,Sigma-Aldrich,Stock antibiotic
+LAB-017,X-Gal (5-bromo-4-chloro-3-indolyl-β-D-galactopyranoside),Promega,100,mg,-20°C Freezer B Rack 2,50,Indicators,2026-01-30,156.75,Promega Corp,Blue-white screening
+LAB-018,Kanamycin Sulfate,Roche,2,grams,4°C Refrigerator Shelf 2,3,Antibiotics,2025-06-22,78.90,Roche Diagnostics,Stock antibiotic
+LAB-019,Competent E. coli DH5α Cells,Invitrogen,10,vials,-80°C Freezer Rack A,5,Cells,2025-02-14,125.60,Invitrogen,Transformation-competent
+LAB-020,GelRed Nucleic Acid Stain,Biotium,0.5,mL,4°C Refrigerator Shelf 4,0.2,Stains,2026-04-10,89.30,Biotium Inc,Safer alternative to EtBr

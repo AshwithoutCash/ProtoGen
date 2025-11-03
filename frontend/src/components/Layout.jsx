@@ -8,7 +8,9 @@ import { useAuth } from '../contexts/AuthContext';
 const Layout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  
   const { currentUser, userProfile, logout } = useAuth();
+  
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef(null);
 
