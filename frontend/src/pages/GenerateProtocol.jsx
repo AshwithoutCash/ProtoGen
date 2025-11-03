@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Loader2, Sparkles, FlaskConical, Lightbulb } from 'lucide-react';
 import { protocolAPI } from '../services/api';
 import ProtocolDisplay from '../components/ProtocolDisplay';
+import DNALoader from '../components/DNALoader';
 
 const GenerateProtocol = () => {
   const [loading, setLoading] = useState(false);
@@ -65,7 +66,14 @@ const GenerateProtocol = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <>
+      <DNALoader 
+        isVisible={loading} 
+        message="Generating your molecular biology protocol..." 
+        overlay={true}
+      />
+      
+      <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -225,12 +233,12 @@ const GenerateProtocol = () => {
           <button
             type="submit"
             disabled={loading}
-            className="btn btn-primary flex items-center space-x-2 px-8"
+            className="w-full btn btn-primary flex items-center justify-center space-x-2"
           >
             {loading ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                <span>Generating...</span>
+                <span>Generating Protocol...</span>
               </>
             ) : (
               <>
@@ -263,7 +271,8 @@ const GenerateProtocol = () => {
       {protocol && (
         <ProtocolDisplay protocol={protocol} title="Generated Protocol" />
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proto-Gen Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8fafc;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            background: #dcfce7;
+            border: 1px solid #16a34a;
+            color: #15803d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Proto-Gen Debug Test</h1>
+        <div class="status">✅ Static HTML is working</div>
+        <p>This page confirms that the web server is running correctly.</p>
+        
+        <h2>Test Links:</h2>
+        <ul>
+            <li><a href="/">Main App (React)</a></li>
+            <li><a href="/test">Test Route</a></li>
+            <li><a href="/signin">Sign In</a></li>
+        </ul>
+        
+        <h2>Debug Info:</h2>
+        <p><strong>Timestamp:</strong> <span id="timestamp"></span></p>
+        <p><strong>User Agent:</strong> <span id="useragent"></span></p>
+        
+        <script>
+            document.getElementById('timestamp').textContent = new Date().toLocaleString();
+            document.getElementById('useragent').textContent = navigator.userAgent;
+            
+            console.log('Static test page loaded successfully');
+            console.log('Current URL:', window.location.href);
+        </script>
+    </div>
+</body>
+</html>

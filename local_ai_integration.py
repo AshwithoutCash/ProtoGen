@@ -201,16 +201,11 @@ class LocalAIService:
         """Use Ollama to generate search queries, then Gemini to search."""
         try:
             # Use Ollama to generate optimal search queries
-            search_prompt = f"""You are a research assistant. Generate 2-3 specific, targeted search queries to find the most relevant and up-to-date information about: {topic}
+            search_prompt = f"""Generate 3 specific search queries for: {topic}
 
 Context: {context}
 
-Return only the search queries, one per line, without any additional text or formatting. Make them specific and likely to return high-quality scientific or technical results.
-
-Example format:
-latest PCR protocol optimization techniques 2024
-PCR troubleshooting common problems solutions
-molecular biology PCR best practices"""
+Return only the search queries, one per line:"""
 
             result = self.ollama.generate(
                 model=self.config.default_model,
@@ -226,7 +221,7 @@ molecular biology PCR best practices"""
             # Use Gemini to search for each query
             all_results = []
             for query in queries[:3]:  # Limit to 3 queries
-                search_results = self.gemini_search.search_web(query, max_results=2)
+                search_results = self.gemini_search.search_web(query, max_results=3)
                 all_results.extend(search_results)
             
             return all_results
@@ -234,6 +229,287 @@ molecular biology PCR best practices"""
         except Exception as e:
             logger.error(f"Ollama-guided search failed: {e}")
             return []
+    
+    def _gemini_research_and_llama_refine(self, request_data: Dict[str, Any]) -> str:
+        """Use Gemini for research, then Llama to refine into our specific format."""
+        try:
+            # Step 1: Use Gemini to gather comprehensive information
+            if not self.config.gemini_api_key:
+                logger.info("No Gemini API key - using Llama only")
+                return self._llama_only_tools(request_data)
+            
+            # Generate research queries
+            search_topic = f"{request_data.get('technique_type')} tools software {request_data.get('data_type')}"
+            research_results = self._ollama_guided_search(search_topic)
+            
+            if not research_results:
+                logger.info("No research results - using Llama only")
+                return self._llama_only_tools(request_data)
+            
+            # Step 2: Combine research into comprehensive context
+            research_context = "RESEARCH INFORMATION:\n\n"
+            for i, result in enumerate(research_results[:6], 1):  # Use top 6 results
+                research_context += f"Source {i}: {result.get('content', '')[:300]}...\n\n"
+            
+            # Step 3: Use Llama to refine into our specific format
+            refine_prompt = f"""You are a bioinformatics expert. Using the research information provided, create EXACTLY 2 comprehensive tool recommendations.
+
+TASK: {request_data.get("computational_goal")}
+TECHNIQUE: {request_data.get("technique_type")}
+DATA TYPE: {request_data.get("data_type")}
+REQUIREMENTS: {request_data.get("context", "None")}
+
+{research_context}
+
+Based on the research above, provide EXACTLY 2 tools in this format:
+
+# Tool #1: [Best Tool Name]
+
+## Overview
+- What it does and why it's the top choice
+- Key features that make it stand out
+
+## Complete Installation Guide
+1. System requirements (OS, RAM, etc.)
+2. Download instructions with exact URLs
+3. Step-by-step installation process
+4. Initial configuration steps
+
+## Pricing Details
+- Exact cost (free/paid/subscription)
+- Academic pricing if available
+- License terms
+
+## Detailed Usage Example
+```
+[Actual commands/steps with real examples]
+```
+
+## Alternative Options
+- Alternative 1: [name] - [brief comparison]
+- Alternative 2: [name] - [brief comparison]
+
+# Tool #2: [Second Best Tool Name]
+
+[Same format as Tool #1]
+
+Use the research information to provide accurate, current details. Make each recommendation comprehensive and actionable."""
+
+            result = self.ollama.generate(
+                model=self.config.default_model,
+                prompt=refine_prompt,
+                system="You are an expert who creates detailed, accurate tool recommendations. Follow the format exactly and provide complete information."
+            )
+            
+            return result.get("response", "")
+            
+        except Exception as e:
+            logger.error(f"Gemini research + Llama refine failed: {e}")
+            return self._llama_only_tools(request_data)
+    
+    def _llama_only_tools(self, request_data: Dict[str, Any]) -> str:
+        """Fallback: Use only Llama for tool recommendations with forced structure."""
+        
+        # Get tool suggestions from Llama with better prompting
+        suggestion_prompt = f"""What are the 2 best software tools for: {request_data.get("computational_goal")}
+
+Task: {request_data.get("technique_type")}
+Data: {request_data.get("data_type")}
+Requirements: {request_data.get("context", "None")}
+
+List exactly 2 specific tool names (not categories):
+1. 
+2. """
+
+        suggestion_result = self.ollama.generate(
+            model=self.config.default_model,
+            prompt=suggestion_prompt,
+            system="List exactly 2 specific software tool names, nothing else."
+        )
+        
+        # Extract tool names with better parsing
+        tool_names = []
+        if suggestion_result.get("response"):
+            response_text = suggestion_result["response"].strip()
+            lines = response_text.split('\n')
+            
+            for line in lines:
+                line = line.strip()
+                # Remove numbering and common prefixes
+                line = line.replace('1.', '').replace('2.', '').replace('3.', '')
+                line = line.replace('Tool 1:', '').replace('Tool 2:', '')
+                line = line.replace('-', '').replace('*', '').strip()
+                
+                # Look for actual tool names (not empty, not too long, not generic)
+                if (line and len(line) < 50 and len(line) > 2 and 
+                    'tool' not in line.lower() and 'option' not in line.lower() and
+                    'software' not in line.lower()):
+                    tool_names.append(line)
+        
+        # Debug: print what we extracted
+        logger.info(f"Extracted tool names: {tool_names}")
+        
+        # Ensure we have exactly 2 tools, use technique-specific defaults if extraction failed
+        if len(tool_names) < 2:
+            # Use technique-specific defaults based on the request
+            technique = request_data.get("technique_type", "").lower()
+            goal = request_data.get("computational_goal", "").lower()
+            
+            if "alignment" in technique or "alignment" in goal:
+                tool_names = ["MUSCLE", "Clustal Omega"]
+            elif "primer" in technique or "primer" in goal:
+                tool_names = ["Primer3", "NCBI Primer-BLAST"]
+            elif "phylogen" in technique or "phylogen" in goal:
+                tool_names = ["RAxML", "IQ-TREE"]
+            elif "model" in technique or "model" in goal or "structure" in goal:
+                tool_names = ["PyMOL", "ChimeraX"]
+            elif "blast" in goal or "search" in goal:
+                tool_names = ["BLAST", "PSI-BLAST"]
+            else:
+                # Try to get better suggestions with a simpler prompt
+                simple_prompt = f"Name 2 software tools for {technique} {goal}:"
+                simple_result = self.ollama.generate(
+                    model=self.config.default_model,
+                    prompt=simple_prompt,
+                    system="List only tool names."
+                )
+                
+                if simple_result.get("response"):
+                    # Try to extract from simple response
+                    words = simple_result["response"].split()
+                    potential_tools = []
+                    for word in words:
+                        word = word.strip('.,()[]{}:;-*')
+                        if (len(word) > 2 and len(word) < 30 and 
+                            word[0].isupper() and 
+                            'tool' not in word.lower()):
+                            potential_tools.append(word)
+                    
+                    if len(potential_tools) >= 2:
+                        tool_names = potential_tools[:2]
+                    else:
+                        tool_names = ["BLAST", "Bioconductor"]
+                else:
+                    tool_names = ["BLAST", "Bioconductor"]
+        
+        # Take only first 2
+        tool_names = tool_names[:2]
+        
+        # Now get detailed information for each tool separately for better quality
+        tool1_details = self._get_tool_details(tool_names[0], request_data)
+        tool2_details = self._get_tool_details(tool_names[1], request_data)
+        
+        # Create comprehensive response using detailed information
+        formatted_response = f"""# Tool #1: {tool_names[0]}
+
+## Overview
+{tool1_details['overview']} {tool1_details['features']}
+
+## Complete Installation Guide
+1. **System Requirements**: {tool1_details['installation']}
+2. **Download**: Visit the official {tool_names[0]} website or repository
+3. **Installation**: {tool1_details['installation']}
+4. **Initial Setup**: Configure settings according to your specific needs
+
+## Pricing Details
+- **Cost**: {tool1_details['pricing']}
+- **Academic Pricing**: Check official website for educational discounts
+- **License**: Verify license terms on official documentation
+
+## Detailed Usage Example
+```bash
+# {tool_names[0]} usage for {request_data.get('technique_type')}
+{tool1_details['usage']}
+# Follow tool-specific documentation for advanced options
+```
+
+## Alternative Options
+- **Alternative 1**: {tool_names[1]} - Complementary approach with different strengths
+- **Alternative 2**: Check bioinformatics tool databases for additional options
+
+# Tool #2: {tool_names[1]}
+
+## Overview
+{tool2_details['overview']} {tool2_details['features']}
+
+## Complete Installation Guide
+1. **System Requirements**: {tool2_details['installation']}
+2. **Download**: Access {tool_names[1]} through official channels
+3. **Installation**: {tool2_details['installation']}
+4. **Initial Setup**: Follow setup wizard or configuration guide
+
+## Pricing Details
+- **Cost**: {tool2_details['pricing']}
+- **Academic Pricing**: Educational institutions may have special rates
+- **License**: Review licensing terms before use
+
+## Detailed Usage Example
+```bash
+# {tool_names[1]} workflow for {request_data.get('technique_type')}
+{tool2_details['usage']}
+# Consult documentation for parameter optimization
+```
+
+## Alternative Options
+- **Alternative 1**: {tool_names[0]} - Primary alternative with proven track record
+- **Alternative 2**: Explore specialized tools for your specific data type
+
+---
+*Note: For the most current information, installation guides, and pricing, please visit the official websites of {tool_names[0]} and {tool_names[1]}.*"""
+        
+        return formatted_response
+    
+    def _get_tool_details(self, tool_name: str, request_data: Dict[str, Any]) -> Dict[str, str]:
+        """Get detailed information about a specific tool."""
+        details_prompt = f"""Provide specific information about {tool_name} for {request_data.get('computational_goal')}.
+
+Focus on:
+1. What {tool_name} does and its key features
+2. System requirements and installation steps
+3. Pricing (free/paid/academic)
+4. Basic usage commands or workflow
+5. Main advantages and limitations
+
+Be specific and factual about {tool_name}."""
+
+        result = self.ollama.generate(
+            model=self.config.default_model,
+            prompt=details_prompt,
+            system=f"Provide accurate, specific information about {tool_name}."
+        )
+        
+        response_text = result.get("response", "")
+        
+        # Parse the response to extract different sections
+        details = {
+            "overview": f"{tool_name} is a specialized tool for {request_data.get('technique_type')}.",
+            "installation": "Standard installation process varies by platform.",
+            "pricing": "Check official website for current pricing information.",
+            "usage": f"Basic usage involves standard {request_data.get('technique_type')} workflow.",
+            "features": f"Key features include {request_data.get('technique_type')} capabilities."
+        }
+        
+        # Try to extract more specific information from the response
+        if response_text:
+            # Simple extraction - look for key information
+            lines = response_text.split('\n')
+            current_section = "overview"
+            
+            for line in lines:
+                line = line.strip()
+                if line:
+                    if any(word in line.lower() for word in ['feature', 'capability', 'function']):
+                        details["features"] = line
+                    elif any(word in line.lower() for word in ['install', 'download', 'setup']):
+                        details["installation"] = line
+                    elif any(word in line.lower() for word in ['price', 'cost', 'free', 'paid']):
+                        details["pricing"] = line
+                    elif any(word in line.lower() for word in ['usage', 'command', 'run', 'execute']):
+                        details["usage"] = line
+                    elif len(details["overview"]) < 100:  # If overview is still short, expand it
+                        details["overview"] = line
+        
+        return details
     
     def generate_protocol_local(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
         """Generate protocol using local AI stack (Ollama directly)."""
@@ -391,81 +667,24 @@ Please provide a comprehensive troubleshooting analysis with specific solutions.
             }
     
     def generate_tools_local(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate tool recommendations using Ollama (with optional Gemini search)."""
+        """Generate tool recommendations using Gemini research + Llama refinement."""
         try:
-            # Create system prompt for tool recommendations
-            system_prompt = """You are a bioinformatics expert. Provide comprehensive tool recommendations with complete details. Include all sections: Overview, Installation Guide, Pricing, Usage Examples, and Alternatives. Write complete, detailed responses without truncation."""
-
-            # Create user prompt with tool request details
-            user_prompt = f"""Recommend computational tools for: {request_data.get("computational_goal")}
-
-Technique: {request_data.get("technique_type")}
-Data Type: {request_data.get("data_type")}
-Requirements: {request_data.get("context", "None")}
-
-For each tool, provide:
-
-## Tool Name
-
-### Overview
-- What it does and why it's recommended
-- Key features
-
-### Complete Beginner Installation Guide
-1. System requirements
-2. Step-by-step download and installation
-3. Initial configuration
-4. How to verify it's working
-
-### Pricing Information
-- Cost structure (free/paid/subscription)
-- Academic discounts available
-- Free alternatives if applicable
-
-### Detailed Usage Examples
-- Sample input format
-- Step-by-step workflow with commands
-- Expected output
-- Common settings and parameters
-
-### Alternative Tools
-- 2-3 similar tools with brief comparisons
-- Pros/cons vs main recommendation
-
-Make each recommendation comprehensive and complete. Include all sections fully."""
-
-            # Optionally search for tool information
-            if self.config.gemini_api_key:
-                search_topic = f"{request_data.get('technique_type')} tools {request_data.get('data_type')}"
-                search_results = self._ollama_guided_search(search_topic, user_prompt)
-                
-                if search_results:
-                    search_context = "\n\n**Additional Tool Information:**\n"
-                    for i, result in enumerate(search_results[:3], 1):
-                        search_context += f"{i}. {result.get('content', '')[:200]}...\n"
-                    
-                    user_prompt += search_context + "\n\nPlease incorporate relevant tool information from the research above."
-
-            # Generate tool recommendations using Ollama
-            result = self.ollama.generate(
-                model=self.config.default_model,
-                prompt=user_prompt,
-                system=system_prompt
-            )
+            logger.info("Starting two-stage tool generation: Gemini research + Llama refinement")
             
-            # Return the raw response to ensure complete output
-            raw_response = result.get("response", "")
-            logger.info(f"Raw response length: {len(raw_response)}")
+            # Use the new two-stage approach
+            refined_response = self._gemini_research_and_llama_refine(request_data)
+            
+            logger.info(f"Refined response length: {len(refined_response)}")
             
             return {
                 "success": True,
-                "tools": raw_response,  # Use raw response for complete output
-                "provider_used": "local_ai_stack",
+                "tools": refined_response,
+                "provider_used": "local_ai_stack_enhanced",
                 "model_used": self.config.default_model
             }
             
         except Exception as e:
-            logger.error(f"Local tool generation failed: {e}")
+            logger.error(f"Enhanced tool generation failed: {e}")
             return {
                 "success": False,
                 "tools": "",

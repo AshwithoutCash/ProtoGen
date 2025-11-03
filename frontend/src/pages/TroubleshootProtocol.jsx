@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Loader2, Search, AlertCircle } from 'lucide-react';
 import { protocolAPI } from '../services/api';
 import ProtocolDisplay from '../components/ProtocolDisplay';
+import DNALoader from '../components/DNALoader';
 
 const TroubleshootProtocol = () => {
   const [loading, setLoading] = useState(false);
@@ -60,7 +61,14 @@ const TroubleshootProtocol = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <>
+      <DNALoader 
+        isVisible={loading} 
+        message="Analyzing your protocol for potential issues..." 
+        overlay={true}
+      />
+      
+      <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -193,7 +201,11 @@ const TroubleshootProtocol = () => {
 
       {/* Analysis Display */}
       {analysis && (
-        <ProtocolDisplay protocol={analysis} title="Troubleshooting Analysis" />
+        <ProtocolDisplay 
+          protocol={analysis} 
+          title="Troubleshooting Analysis"
+          type="troubleshoot"
+        />
       )}
 
       {/* Tips */}
@@ -230,7 +242,8 @@ const TroubleshootProtocol = () => {
           </li>
         </ul>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

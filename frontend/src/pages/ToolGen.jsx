@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Loader2, Monitor, Lightbulb } from 'lucide-react';
 import { protocolAPI } from '../services/api';
 import ProtocolDisplay from '../components/ProtocolDisplay';
+import DNALoader from '../components/DNALoader';
 
 const ToolGen = () => {
   const [loading, setLoading] = useState(false);
@@ -46,7 +47,14 @@ const ToolGen = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <>
+      <DNALoader 
+        isVisible={loading} 
+        message="Analyzing computational tools for your research..." 
+        overlay={true}
+      />
+      
+      <div className="space-y-8">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
@@ -207,10 +215,12 @@ const ToolGen = () => {
             title="Computational Tools"
             showCopy={true}
             showDownload={true}
+            type="tools"
           />
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

@@ -1,6 +1,7 @@
 """API routes for Proto-Gen."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Header, UploadFile, File
+from typing import Optional
 from app.models.protocol import (
     ProtocolGenerationRequest,
     TroubleshootingRequest,
@@ -9,7 +10,13 @@ from app.models.protocol import (
     RouteGenResponse,
     ToolGenRequest,
     ToolGenResponse,
-    HealthResponse
+    HealthResponse,
+    ProcurementRequest,
+    ProcurementResponse,
+    InventoryUploadResponse,
+    InventoryResponse,
+    InventorySearchRequest,
+    InventoryAvailabilityRequest
 )
 from app.services.protocol_service import protocol_service
 from app.services.local_ai_service import local_ai_service
@@ -159,3 +166,189 @@ async def get_providers():
     return {
         "providers": llm_service.get_available_providers()
     }
+
+
+@router.post("/generate-procurement", response_model=ProcurementResponse)
+async def generate_procurement(
+    request: ProcurementRequest,
+    x_processing_agent: Optional[str] = Header(None),
+    x_llm_backend: Optional[str] = Header(None),
+    x_task_type: Optional[str] = Header(None)
+):
+    """
+    Generate procurement analysis using Ollama + Gemini pipeline.
+    
+    This endpoint processes laboratory material procurement requests through
+    an Ollama processing agent that uses Gemini for supplier search and
+    price comparison across multiple trusted vendors.
+    
+    Args:
+        request: Procurement request with materials, quantities, and preferences
+        x_processing_agent: Must be 'ollama' for proper routing
+        x_llm_backend: Must be 'gemini' for search processing
+        x_task_type: Should be 'procurement-search'
+        
+    Returns:
+        Structured procurement data with vendor comparisons and cost analysis
+    """
+    try:
+        # Validate processing pipeline headers
+        if x_processing_agent != "ollama":
+            raise HTTPException(
+                status_code=400, 
+                detail="Invalid processing agent. Expected 'ollama'"
+            )
+        
+        if x_llm_backend != "gemini":
+            raise HTTPException(
+                status_code=400, 
+                detail="Invalid LLM backend. Expected 'gemini'"
+            )
+        
+        # Process procurement request through Ollama + Gemini pipeline
+        response = await protocol_service.generate_procurement(request)
+        
+        if not response.success:
+            raise HTTPException(status_code=500, detail=response.error)
+        
+        return response
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Internal server error in Ollama/Gemini pipeline: {str(e)}"
+        )
+
+
+@router.post("/upload-inventory", response_model=InventoryUploadResponse)
+async def upload_inventory(file: UploadFile = File(...)):
+    """
+    Upload and process inventory data using Llama LLM.
+    
+    This endpoint accepts CSV or Excel files, processes them through
+    Llama LLM for data normalization, and stores the results in Firebase.
+    
+    Args:
+        file: CSV or Excel file containing inventory data
+        
+    Returns:
+        Upload result with processing statistics and Firebase status
+    """
+    try:
+        # Validate file type
+        allowed_types = [
+            'text/csv',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ]
+        
+        if file.content_type not in allowed_types:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid file type. Please upload CSV or Excel files only."
+            )
+        
+        # Process inventory upload through Llama + Firebase pipeline
+        response = await protocol_service.upload_inventory(file)
+        
+        if not response.success:
+            raise HTTPException(status_code=500, detail=response.error)
+        
+        return response
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error during inventory upload: {str(e)}"
+        )
+
+
+@router.get("/inventory", response_model=InventoryResponse)
+async def get_inventory():
+    """
+    Retrieve all inventory items from Firebase.
+    
+    Returns:
+        List of all inventory items with current stock levels
+    """
+    try:
+        response = await protocol_service.get_inventory()
+        
+        if not response.success:
+            raise HTTPException(status_code=500, detail=response.error)
+        
+        return response
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error retrieving inventory: {str(e)}"
+        )
+
+
+@router.post("/inventory/search", response_model=InventoryResponse)
+async def search_inventory(request: InventorySearchRequest):
+    """
+    Search inventory items by material name, brand, or location.
+    
+    Args:
+        request: Search request with search term
+        
+    Returns:
+        Filtered list of inventory items matching the search term
+    """
+    try:
+        response = await protocol_service.search_inventory(request.search_term)
+        
+        if not response.success:
+            raise HTTPException(status_code=500, detail=response.error)
+        
+        return response
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error during inventory search: {str(e)}"
+        )
+
+
+@router.post("/inventory/check-availability", response_model=InventoryResponse)
+async def check_inventory_availability(request: InventoryAvailabilityRequest):
+    """
+    Check availability of a specific material for Procure-Gen integration.
+    
+    This endpoint is used by the procurement system to verify current
+    stock levels before making purchase recommendations.
+    
+    Args:
+        request: Availability check request with material name and quantity
+        
+    Returns:
+        Availability status: "Sufficient", "Insufficient", or "Not Found"
+    """
+    try:
+        response = await protocol_service.check_inventory_availability(
+            request.material_name,
+            request.required_quantity
+        )
+        
+        if not response.success:
+            raise HTTPException(status_code=500, detail=response.error)
+        
+        return response
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error checking availability: {str(e)}"
+        )

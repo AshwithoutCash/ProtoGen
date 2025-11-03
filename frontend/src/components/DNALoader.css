@@ -1,0 +1,250 @@
+/* DNA Loader Overlay - Full Screen */
+.dna-loader-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* DNA Loader Container */
+.dna-loader-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: 2rem;
+}
+
+.dna-loader-message {
+  margin-top: 2rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+
+/* DNA Animation - From Uiverse.io by louloudev59 */
+.dna {
+  position: relative;
+  transform: rotate(15deg);
+  transform-style: preserve-3d;
+}
+
+.link {
+  margin: 1em auto;
+  width: 10em;
+  height: 1em;
+  transform-style: preserve-3d;
+  animation: linkY 15s infinite linear;
+  animation-delay: var(--iad);
+}
+
+.link:nth-child(1) {
+  --iad: 0s;
+}
+.link:nth-child(2) {
+  --iad: -0.625s;
+}
+.link:nth-child(3) {
+  --iad: -1.25s;
+}
+.link:nth-child(4) {
+  --iad: -1.875s;
+}
+.link:nth-child(5) {
+  --iad: -2.5s;
+}
+.link:nth-child(6) {
+  --iad: -3.125s;
+}
+.link:nth-child(7) {
+  --iad: -3.75s;
+}
+.link:nth-child(8) {
+  --iad: -4.375s;
+}
+.link:nth-child(9) {
+  --iad: -5s;
+}
+.link:nth-child(10) {
+  --iad: -5.625s;
+}
+.link:nth-child(11) {
+  --iad: -6.25s;
+}
+.link:nth-child(12) {
+  --iad: -6.875s;
+}
+.link:nth-child(13) {
+  --iad: -7.5s;
+}
+.link:nth-child(14) {
+  --iad: -8.125s;
+}
+.link:nth-child(15) {
+  --iad: -8.75s;
+}
+.link:nth-child(16) {
+  --iad: -9.375s;
+}
+.link:nth-child(17) {
+  --iad: -10s;
+}
+.link:nth-child(18) {
+  --iad: -10.625s;
+}
+.link:nth-child(19) {
+  --iad: -11.25s;
+}
+.link:nth-child(20) {
+  --iad: -11.875s;
+}
+.link:nth-child(21) {
+  --iad: -12.5s;
+}
+.link:nth-child(22) {
+  --iad: -13.125s;
+}
+.link:nth-child(23) {
+  --iad: -13.75s;
+}
+.link:nth-child(24) {
+  --iad: -14.375s;
+}
+
+/* Green theme colors for DNA */
+.link:nth-child(4n + 1) {
+  --clr1: #4ade80;
+  --clr2: #16a34a;
+}
+.link:nth-child(4n + 2) {
+  --clr1: #86efac;
+  --clr2: #22c55e;
+}
+.link:nth-child(4n + 3) {
+  --clr1: #16a34a;
+  --clr2: #4ade80;
+}
+.link:nth-child(4n + 4) {
+  --clr1: #22c55e;
+  --clr2: #86efac;
+}
+
+.link > div {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.7;
+  background-image: radial-gradient(#000, #0000),
+    linear-gradient(90deg, var(--clr1), var(--clr2));
+  box-shadow: 0 0 0.5em rgba(74, 222, 128, 0.3);
+  animation: linkX 7.5s infinite linear reverse;
+}
+
+@keyframes linkX {
+  0% {
+    transform: rotateX(0deg);
+  }
+  100% {
+    transform: rotateX(360deg);
+  }
+}
+
+.link > div:nth-child(1) {
+  animation-delay: calc(var(--iad) + 0s);
+}
+.link > div:nth-child(2) {
+  animation-delay: calc(var(--iad) + -1.875s);
+}
+.link > div:nth-child(3) {
+  animation-delay: calc(var(--iad) + -3.75s);
+}
+.link > div:nth-child(4) {
+  animation-delay: calc(var(--iad) + -5.625s);
+}
+
+.link::before,
+.link::after {
+  content: "";
+  position: absolute;
+  top: -0.5em;
+  width: 2em;
+  height: 2em;
+  border-radius: 50%;
+  animation: linkY 15s infinite linear reverse;
+  animation-delay: inherit;
+}
+
+.link::before {
+  left: -1.75em;
+  box-shadow: 0 0 1em var(--clr1);
+  background-image: radial-gradient(
+    circle at 50% 25%,
+    #fff,
+    var(--clr1),
+    #000 90%
+  );
+}
+
+.link::after {
+  right: -1.75em;
+  box-shadow: 0 0 1em var(--clr2);
+  background-image: radial-gradient(
+    circle at 50% 25%,
+    #fff,
+    var(--clr2),
+    #000 90%
+  );
+}
+
+@keyframes linkY {
+  0% {
+    transform: rotateY(0deg);
+  }
+  100% {
+    transform: rotateY(360deg);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .dna {
+    transform: rotate(15deg) scale(0.8);
+  }
+  
+  .dna-loader-container {
+    min-height: 150px;
+    padding: 1rem;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .link,
+  .link > div,
+  .link::before,
+  .link::after {
+    animation-duration: 30s;
+  }
+}

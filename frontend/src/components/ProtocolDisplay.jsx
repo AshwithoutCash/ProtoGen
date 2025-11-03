@@ -2,8 +2,9 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Download, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
+import SaveButton from './SaveButton';
 
-const ProtocolDisplay = ({ protocol, title = "Generated Protocol" }) => {
+const ProtocolDisplay = ({ protocol, title = "Generated Protocol", showSave = true, type = "protocol" }) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -29,6 +30,14 @@ const ProtocolDisplay = ({ protocol, title = "Generated Protocol" }) => {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
         <div className="flex space-x-2">
+          {showSave && protocol && (
+            <SaveButton 
+              data={protocol}
+              type={type}
+              title={title}
+              variant="save"
+            />
+          )}
           <button
             onClick={handleCopy}
             className="btn btn-secondary flex items-center space-x-2"

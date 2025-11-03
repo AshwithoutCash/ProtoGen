@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test ToolGen Frontend Fix</title>
+</head>
+<body>
+    <h1>Testing ToolGen API Response</h1>
+    <button onclick="testToolGen()">Test Tool Generation</button>
+    <div id="result"></div>
+
+    <script>
+        async function testToolGen() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/v1/tools', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_goal: "Design PCR primers for gene amplification",
+                        technique: "Primer Design",
+                        data_type: "DNA sequence (FASTA format)",
+                        additional_context: "Need free tools only"
+                    })
+                });
+                
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <h2>Response:</h2>
+                    <p><strong>Success:</strong> ${data.success}</p>
+                    <p><strong>Provider:</strong> ${data.provider_used}</p>
+                    <p><strong>Has 'tools' field:</strong> ${data.tools ? 'YES' : 'NO'}</p>
+                    <p><strong>Has 'recommendations' field:</strong> ${data.recommendations ? 'YES' : 'NO'}</p>
+                    <p><strong>Tools length:</strong> ${data.tools ? data.tools.length : 'N/A'}</p>
+                    <h3>Tools Preview:</h3>
+                    <pre style="background: #f5f5f5; padding: 10px; white-space: pre-wrap;">${data.tools ? data.tools.substring(0, 500) + '...' : 'No tools field'}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

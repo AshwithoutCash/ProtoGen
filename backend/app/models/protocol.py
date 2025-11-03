@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from enum import Enum
 
 
@@ -199,3 +199,65 @@ class HealthResponse(BaseModel):
     status: str
     version: str
     available_providers: List[str]
+    message: Optional[str] = None
+
+
+class ProcurementRequest(BaseModel):
+    """Request model for procurement generation."""
+    
+    materials_list: str = Field(..., description="Newline-separated list of required materials")
+    quantities: str = Field(..., description="Newline-separated list of quantities needed")
+    preferred_brands: Optional[str] = Field("", description="Preferred brands in 'Material: Brand' format")
+    budget_limit: Optional[str] = Field("", description="Maximum budget constraint")
+    urgency: str = Field("standard", description="Urgency level: standard, urgent, next_day")
+    supplier_preference: str = Field("any", description="Preferred supplier: any, sigma, thermo, biorad, neb")
+    processing_pipeline: Dict[str, Any] = Field(..., description="Processing pipeline configuration")
+
+
+class ProcurementResponse(BaseModel):
+    """Response model for procurement generation."""
+    
+    success: bool = Field(..., description="Whether the request was successful")
+    data: Optional[Dict[str, Any]] = Field(None, description="Procurement analysis data")
+    error: Optional[str] = Field(None, description="Error message if request failed")
+
+
+class InventoryItem(BaseModel):
+    """Model for inventory item."""
+    
+    ItemID: str = Field(..., description="Unique identifier for the item")
+    MaterialName: str = Field(..., description="Normalized material name")
+    Brand: str = Field(..., description="Manufacturer/Supplier brand")
+    CurrentStock: float = Field(..., description="Current stock quantity")
+    Unit: str = Field(..., description="Normalized unit (mL, units, grams, pieces)")
+    Location: str = Field(..., description="Storage location")
+    MinimumStock: float = Field(..., description="Minimum stock threshold")
+
+
+class InventoryUploadResponse(BaseModel):
+    """Response model for inventory upload."""
+    
+    success: bool = Field(..., description="Whether the upload was successful")
+    data: Optional[Dict[str, Any]] = Field(None, description="Upload result data")
+    error: Optional[str] = Field(None, description="Error message if upload failed")
+
+
+class InventoryResponse(BaseModel):
+    """Response model for inventory operations."""
+    
+    success: bool = Field(..., description="Whether the operation was successful")
+    data: Optional[Dict[str, Any]] = Field(None, description="Inventory data")
+    error: Optional[str] = Field(None, description="Error message if operation failed")
+
+
+class InventorySearchRequest(BaseModel):
+    """Request model for inventory search."""
+    
+    search_term: str = Field(..., description="Search term for inventory items")
+
+
+class InventoryAvailabilityRequest(BaseModel):
+    """Request model for checking inventory availability."""
+    
+    material_name: str = Field(..., description="Name of the material to check")
+    required_quantity: float = Field(..., description="Required quantity")
