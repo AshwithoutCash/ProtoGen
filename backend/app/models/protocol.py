@@ -102,10 +102,19 @@ class TroubleshootingRequest(BaseModel):
 
 
 class ProtocolResponse(BaseModel):
-    """Response model for protocol generation and troubleshooting."""
+    """Response model for protocol generation."""
     
     success: bool = Field(..., description="Whether the request was successful")
     protocol: str = Field(..., description="The generated protocol in Markdown format")
+    provider_used: str = Field(..., description="The LLM provider that was used")
+    error: Optional[str] = Field(None, description="Error message if request failed")
+
+
+class TroubleshootingResponse(BaseModel):
+    """Response model for protocol troubleshooting."""
+    
+    success: bool = Field(..., description="Whether the request was successful")
+    analysis: str = Field(..., description="The troubleshooting analysis in Markdown format")
     provider_used: str = Field(..., description="The LLM provider that was used")
     error: Optional[str] = Field(None, description="Error message if request failed")
 
@@ -179,7 +188,7 @@ class ToolGenResponse(BaseModel):
     """Response model for computational tool recommendations."""
     
     success: bool = Field(..., description="Whether the request was successful")
-    recommendations: str = Field(..., description="The generated tool recommendations in Markdown format")
+    tools: str = Field(..., description="The generated tool recommendations in Markdown format")
     provider_used: str = Field(..., description="The LLM provider that was used")
     error: Optional[str] = Field(None, description="Error message if request failed")
 

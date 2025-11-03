@@ -12,6 +12,7 @@ from app.models.protocol import (
     HealthResponse
 )
 from app.services.protocol_service import protocol_service
+from app.services.local_ai_service import local_ai_service
 from app.services.llm_service import llm_service
 from app.core.config import settings
 
@@ -21,11 +22,22 @@ router = APIRouter()
 @router.get("/health", response_model=HealthResponse)
 async def health_check():
     """Health check endpoint."""
-    return HealthResponse(
-        status="healthy",
-        version=settings.app_version,
-        available_providers=llm_service.get_available_providers()
-    )
+    # Check if local AI stack is available
+    local_ai_health = local_ai_service.get_health_status()
+    
+    if local_ai_health.get("overall", False):
+        return HealthResponse(
+            status="healthy",
+            version=settings.app_version,
+            available_providers=["local_ai_stack"]
+        )
+    else:
+        return HealthResponse(
+            status="healthy",
+            version=settings.app_version,
+            available_providers=["gemini", "openai", "anthropic"],
+            message="Local AI stack not available. Using external APIs."
+        )
 
 
 @router.post("/generate", response_model=ProtocolResponse)
@@ -130,7 +142,7 @@ async def generate_tools(request: ToolGenRequest):
         Tool recommendations with usage instructions and tutorials
     """
     try:
-        response = await protocol_service.generate_tools(request)
+        response = await local_ai_service.generate_tools(request)
         
         if not response.success:
             raise HTTPException(status_code=500, detail=response.error)

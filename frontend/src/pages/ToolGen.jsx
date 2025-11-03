@@ -34,7 +34,7 @@ const ToolGen = () => {
       const response = await protocolAPI.generateTools(formData);
       
       if (response.success) {
-        setRecommendations(response.recommendations);
+        setRecommendations(response.tools);
       } else {
         setError(response.error || 'Failed to generate tool recommendations');
       }
