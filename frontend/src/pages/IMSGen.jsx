@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Upload, Database, AlertTriangle, CheckCircle, FileText, Package, Search, Download } from 'lucide-react';
+import { Upload, Database, AlertTriangle, CheckCircle, FileText, Package, Search, Download, Mail, Bell, Save, FolderOpen } from 'lucide-react';
 import { protocolAPI } from '../services/api';
+import { alertService } from '../services/alertService';
+import AlertPreview from '../components/AlertPreview';
 
 const IMSGen = () => {
   const [loading, setLoading] = useState(false);
@@ -11,6 +13,8 @@ const IMSGen = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [alertSending, setAlertSending] = useState(false);
+  const [alertResult, setAlertResult] = useState(null);
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
@@ -54,11 +58,22 @@ const IMSGen = () => {
         setUploadResult(response.data);
         // Set the uploaded inventory data directly from the response
         if (response.data && response.data.items) {
-          console.log('Setting inventory data:', response.data.items.length, 'items');
+          console.log('✅ Setting inventory data from upload:', response.data.items.length, 'items');
+          console.log('📋 First few items:', response.data.items.slice(0, 3));
           setInventoryData(response.data.items);
           setSuccessMessage(`Successfully uploaded ${response.data.items.length} items!`);
+          
+          // Also save to localStorage immediately after upload
+          localStorage.setItem('protogen_inventory', JSON.stringify({
+            data: response.data.items,
+            timestamp: new Date().toISOString(),
+            count: response.data.items.length,
+            source: 'upload'
+          }));
+          console.log('💾 Auto-saved uploaded data to localStorage');
         } else {
-          console.log('No items found in response data:', response.data);
+          console.log('❌ No items found in response data:', response.data);
+          setError('Upload succeeded but no inventory items were found in the response');
         }
         setViewMode('view');
         setError(null); // Clear any previous errors
@@ -179,6 +194,117 @@ const IMSGen = () => {
     );
   };
 
+  const handleSaveInventory = async () => {
+    if (inventoryData.length === 0) {
+      setError('No inventory data to save');
+      return;
+    }
+
+    setLoading(true);
+    console.log('💾 Saving inventory data:', inventoryData.length, 'items');
+    
+    try {
+      // Always save to localStorage first (this always works)
+      const saveData = {
+        data: inventoryData,
+        timestamp: new Date().toISOString(),
+        count: inventoryData.length
+      };
+      
+      localStorage.setItem('protogen_inventory', JSON.stringify(saveData));
+      console.log('✅ Saved to localStorage:', saveData.count, 'items');
+
+      // Try to save to backend (optional)
+      try {
+        console.log('🔄 Attempting backend save...');
+        const saveResponse = await fetch('http://localhost:8001/api/v1/save-inventory', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            inventory: inventoryData,
+            timestamp: new Date().toISOString()
+          })
+        });
+
+        if (saveResponse.ok) {
+          const result = await saveResponse.json();
+          console.log('✅ Backend save successful:', result);
+          setSuccessMessage(`Successfully saved ${inventoryData.length} inventory items to database!`);
+        } else {
+          console.warn('⚠️ Backend save failed:', saveResponse.status);
+          setSuccessMessage(`Saved ${inventoryData.length} items locally (database unavailable)`);
+        }
+      } catch (backendError) {
+        console.warn('⚠️ Backend save error:', backendError);
+        setSuccessMessage(`Saved ${inventoryData.length} items locally (database unavailable)`);
+      }
+
+    } catch (err) {
+      console.error('❌ Save error:', err);
+      setError(`Failed to save inventory: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLoadSavedInventory = () => {
+    try {
+      console.log('📂 Loading saved inventory from localStorage...');
+      const saved = localStorage.getItem('protogen_inventory');
+      
+      if (saved) {
+        const parsedData = JSON.parse(saved);
+        console.log('✅ Found saved data:', parsedData);
+        
+        if (parsedData.data && Array.isArray(parsedData.data)) {
+          setInventoryData(parsedData.data);
+          const saveDate = new Date(parsedData.timestamp).toLocaleString();
+          setSuccessMessage(`Loaded ${parsedData.data.length} saved items from ${saveDate}`);
+          setViewMode('view');
+          console.log('✅ Loaded inventory:', parsedData.data.length, 'items');
+        } else {
+          setError('Saved data is corrupted or invalid');
+          console.error('❌ Invalid saved data structure:', parsedData);
+        }
+      } else {
+        setError('No saved inventory data found in localStorage');
+        console.log('ℹ️ No saved inventory data found');
+      }
+    } catch (err) {
+      console.error('❌ Load error:', err);
+      setError(`Failed to load saved inventory: ${err.message}`);
+    }
+  };
+
+  const handleSendLowStockAlert = async () => {
+    setAlertSending(true);
+    setAlertResult(null);
+    
+    try {
+      console.log('Sending alert for inventory items:', inventoryData.length);
+      const result = await alertService.checkAndSendAlerts(inventoryData);
+      console.log('Alert result:', result);
+      setAlertResult(result);
+      
+      if (result.success) {
+        setSuccessMessage(
+          result.data 
+            ? `Alert sent! ${result.data.itemsAlerted} items reported (${result.data.criticalItems} critical)`
+            : result.message
+        );
+      } else {
+        setError(`Failed to send alert: ${result.message}`);
+      }
+    } catch (err) {
+      console.error('Alert error:', err);
+      setError(`Alert failed: ${err.message}`);
+    } finally {
+      setAlertSending(false);
+    }
+  };
+
   const filteredInventory = inventoryData.filter(item =>
     item.MaterialName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.Brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -223,9 +349,7 @@ const IMSGen = () => {
               setViewMode('view');
               setSuccessMessage(null);
               setError(null);
-              if (inventoryData.length === 0) {
-                loadInventoryData();
-              }
+              // Don't auto-load data - let user choose to load saved data or backend data
             }}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               viewMode === 'view'
@@ -336,18 +460,53 @@ const IMSGen = () => {
                 
                 <div className="flex items-center space-x-4">
                   {inventoryData.length === 0 && (
-                    <button
-                      onClick={loadInventoryData}
-                      disabled={loading}
-                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors flex items-center space-x-2"
-                    >
-                      {loading ? (
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      ) : (
-                        <Database className="w-4 h-4" />
-                      )}
-                      <span>{loading ? 'Loading...' : 'Load Data'}</span>
-                    </button>
+                    <>
+                      <button
+                        onClick={handleLoadSavedInventory}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                      >
+                        <FolderOpen className="w-4 h-4" />
+                        <span>Load Saved</span>
+                      </button>
+                      <button
+                        onClick={loadInventoryData}
+                        disabled={loading}
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors flex items-center space-x-2"
+                      >
+                        {loading ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <Database className="w-4 h-4" />
+                        )}
+                        <span>{loading ? 'Loading...' : 'Load Demo Data'}</span>
+                      </button>
+                    </>
+                  )}
+                  {inventoryData.length > 0 && (
+                    <>
+                      <button
+                        onClick={handleSaveInventory}
+                        disabled={loading}
+                        className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors flex items-center space-x-2"
+                      >
+                        {loading ? (
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <Save className="w-4 h-4" />
+                        )}
+                        <span>{loading ? 'Saving...' : 'Save Inventory'}</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          const saved = localStorage.getItem('protogen_inventory');
+                          console.log('🔍 Current localStorage data:', saved ? JSON.parse(saved) : 'No data');
+                          alert(saved ? `Found saved data: ${JSON.parse(saved).count} items` : 'No saved data found');
+                        }}
+                        className="bg-gray-600 text-white px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors text-sm"
+                      >
+                        Check Saved
+                      </button>
+                    </>
                   )}
                   <div className="relative">
                     <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -379,15 +538,37 @@ const IMSGen = () => {
             {/* Low Stock Alert */}
             {getLowStockItems().length > 0 && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <div className="flex items-center space-x-2 mb-2">
-                  <AlertTriangle className="w-5 h-5 text-yellow-600" />
-                  <h3 className="font-medium text-yellow-900">Low Stock Alert</h3>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                    <h3 className="font-medium text-yellow-900">Low Stock Alert</h3>
+                  </div>
+                  <button
+                    onClick={handleSendLowStockAlert}
+                    disabled={alertSending}
+                    className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center space-x-2 text-sm"
+                  >
+                    {alertSending ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <Mail className="w-4 h-4" />
+                    )}
+                    <span>{alertSending ? 'Sending...' : 'Send Email Alert'}</span>
+                  </button>
                 </div>
-                <p className="text-sm text-yellow-800">
-                  {getLowStockItems().length} items are running low on stock
+                <p className="text-sm text-yellow-800 mb-3">
+                  {getLowStockItems().length} items are running low on stock and need immediate attention.
                 </p>
+                <div className="flex items-center space-x-4 text-xs text-yellow-700">
+                  <span>• Critical: {getLowStockItems().filter(item => item.CurrentStock <= item.MinimumStock).length}</span>
+                  <span>• Warning: {getLowStockItems().filter(item => item.CurrentStock <= item.MinimumStock * 1.5 && item.CurrentStock > item.MinimumStock).length}</span>
+                  <span>• Click "Send Email Alert" to notify via Gmail</span>
+                </div>
               </div>
             )}
+
+            {/* Alert Preview */}
+            <AlertPreview inventoryData={inventoryData} />
 
             {/* Inventory Table */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
