@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Use direct backend URL for testing
-const API_BASE_URL = 'http://localhost:8001/api/v1';
+const API_BASE_URL = 'http://localhost:8000/api/v1';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -38,7 +38,7 @@ export const protocolAPI = {
   // Generate experimental routes
   generateRoutes: async (data) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/generate-routes`, {
+      const response = await fetch(`${API_BASE_URL}/routes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

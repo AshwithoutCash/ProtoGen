@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Loader2, Route, Lightbulb } from 'lucide-react';
 import { protocolAPI } from '../services/api';
 import ProtocolDisplay from '../components/ProtocolDisplay';
+import DNALoader from '../components/DNALoader';
 
 const RouteGen = () => {
   const [loading, setLoading] = useState(false);
@@ -30,6 +31,10 @@ const RouteGen = () => {
     setError(null);
     setRoutes(null);
 
+    // Ensure minimum loading duration for better UX
+    const startTime = Date.now();
+    const minLoadingTime = 1500; // 1.5 seconds minimum
+
     try {
       const response = await protocolAPI.generateRoutes(formData);
       
@@ -39,15 +44,44 @@ const RouteGen = () => {
         setError(response.error || 'Failed to generate routes');
       }
     } catch (err) {
-      setError(err.response?.data?.detail || err.message || 'An error occurred');
+      console.error('Route generation error:', err);
+      let errorMessage = 'An error occurred';
+      
+      if (err.response?.data?.detail) {
+        // Handle FastAPI validation errors
+        if (Array.isArray(err.response.data.detail)) {
+          errorMessage = err.response.data.detail.map(e => e.msg || e).join(', ');
+        } else if (typeof err.response.data.detail === 'string') {
+          errorMessage = err.response.data.detail;
+        } else {
+          errorMessage = JSON.stringify(err.response.data.detail);
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
-      setLoading(false);
+      // Ensure minimum loading time has passed
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
+      
+      setTimeout(() => {
+        setLoading(false);
+      }, remainingTime);
     }
   };
 
 
   return (
-    <div className="space-y-8">
+    <>
+      <DNALoader 
+        isVisible={loading} 
+        message="Planning experimental routes for your research goal..." 
+        overlay={true}
+      />
+      
+      <div className="space-y-8">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
@@ -193,7 +227,8 @@ const RouteGen = () => {
           />
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

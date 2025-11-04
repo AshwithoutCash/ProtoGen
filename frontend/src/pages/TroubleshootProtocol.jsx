@@ -45,6 +45,10 @@ const TroubleshootProtocol = () => {
     setError(null);
     setAnalysis(null);
 
+    // Ensure minimum loading duration for better UX
+    const startTime = Date.now();
+    const minLoadingTime = 1500; // 1.5 seconds minimum
+
     try {
       const response = await protocolAPI.troubleshootProtocol(formData);
       
@@ -54,9 +58,31 @@ const TroubleshootProtocol = () => {
         setError(response.error || 'Failed to analyze protocol');
       }
     } catch (err) {
-      setError(err.response?.data?.detail || err.message || 'An error occurred');
+      console.error('Troubleshoot error:', err);
+      let errorMessage = 'An error occurred';
+      
+      if (err.response?.data?.detail) {
+        // Handle FastAPI validation errors
+        if (Array.isArray(err.response.data.detail)) {
+          errorMessage = err.response.data.detail.map(e => e.msg || e).join(', ');
+        } else if (typeof err.response.data.detail === 'string') {
+          errorMessage = err.response.data.detail;
+        } else {
+          errorMessage = JSON.stringify(err.response.data.detail);
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
-      setLoading(false);
+      // Ensure minimum loading time has passed
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
+      
+      setTimeout(() => {
+        setLoading(false);
+      }, remainingTime);
     }
   };
 

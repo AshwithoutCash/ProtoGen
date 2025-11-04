@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
-  Dna, Home, FileText, Search, GitBranch, Microscope, User, LogOut, ChevronDown, Archive, AlertCircle, ShoppingCart, Database 
+  Dna, Home, FileText, Search, GitBranch, Microscope, User, LogOut, ChevronDown, Archive, AlertCircle, ShoppingCart 
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
@@ -121,17 +121,6 @@ const Layout = ({ children }) => {
               >
                 <ShoppingCart className="w-4 h-4" />
                 <span className="font-medium">Procurement</span>
-              </Link>
-              <Link
-                to="/inventory"
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-                  isActive('/inventory')
-                    ? 'bg-green-100 text-green-800 shadow-sm'
-                    : 'text-green-700 hover:bg-green-50 hover:text-green-800'
-                }`}
-              >
-                <Database className="w-4 h-4" />
-                <span className="font-medium">Inventory</span>
               </Link>
             </nav>
 
